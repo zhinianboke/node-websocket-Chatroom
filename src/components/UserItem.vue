@@ -5,7 +5,7 @@
     </div>
     <div class="user-info-warp">
       <div class="user-name-warp">
-        <div class="user-name-text">{{user.name}}</div>
+        <div class="user-name-text">{{user.name}}<span v-if="user.online" style="color:red;">(在线)</span><span v-if="!(user.online) || !(user.hasOwnProperty('online')) || user.online==''">(离线)</span></div>
         <div class="message-time">
           <slot name="time"></slot>
         </div>

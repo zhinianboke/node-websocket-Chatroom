@@ -63,5 +63,31 @@ module.exports ={
         }
       })
     })
-  }
+  },
+  async getUserInfo(){
+    return new Promise((resolve, reject) => {
+      db.userInfo.find({}).sort({time:1}).skip(0).limit(1000).exec((err,docs) => {
+        if(err){
+          reject(err)
+        }else {
+          resolve(docs)
+        }
+      })
+    })
+  },
+  saveUserInfo(allUsers, user,status){
+    if(!(allUsers.some(item1 => item1.id == user.id))) {
+      if(status==='login'){
+        return new Promise((resolve, reject) => {
+          db.userInfo.insert(user,(err,newUser) => {
+            if(err){
+              reject(err)
+            }else {
+              resolve(newUser)
+            }
+          })
+        })
+      }
+    }
+  },
 };

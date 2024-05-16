@@ -25,7 +25,7 @@ const util={
     }else {
       const flag=await this.isHaveName(user.name);
       if(!flag){
-        user.id=socket.id;
+        user.id=user.name;
         user.time=new Date().getTime();
         this.loginSuccess(user,socket);
         store.saveUser(user,'login')
@@ -38,6 +38,9 @@ const util={
     }
   },
   async loginSuccess(user, socket) {
+    
+    console.log(user)
+    user.online=true
     const data={
       user:user,
       token:jwt.token(user)
@@ -47,14 +50,15 @@ const util={
       if(to.type==='user'){
         socket.broadcast.to(to.roomId).emit('message', socket.user, to,message,type);
       }
-      if(to.type==='group'){
-        socket.broadcast.emit('message', socket.user,to,message,type);
-        store.saveMessage(from,to,message,type)
-      }
+      socket.broadcast.emit('message', socket.user,to,message,type);
+      store.saveMessage(from,to,message,type)
     });
-    const users=await this.getOnlineUsers();
+    const users=await this.getOnlineUsers(user.name);
     socket.user=user;
     socket.emit('loginSuccess', data, users);
+    
+    const allUsers = await store.getUserInfo();
+    store.saveUserInfo(allUsers, user,'login')
   },
   //根据useragent判读设备类型
   getDeviceType(userAgent){
@@ -73,27 +77,39 @@ const util={
     }
   },
   //获取在线用户列表
-  async getOnlineUsers(){
+  async getOnlineUsers(name){
     const users=[
       {
         id:"group_001",
         name:"群聊天室",
         avatarUrl:"static/img/avatar/group-icon.png",
-        type:"group"
+        type:"group",
+        online:true
       }
     ];
     const clients=await io.fetchSockets();
     clients.forEach((item) => {
       if(item.user){
+        item.user.online=true
         users.push(item.user)
+      }
+    })
+    const allUsers = await store.getUserInfo();
+    allUsers.forEach((item) => {
+      if(!(users.some(item1 => item1.id === item.id))) {
+
+        if(item.id != name) {
+
+          users.push(item)
+        }
       }
     })
     return users;
   },
   //判断用户是否已经存在
   async isHaveName(name){
-    const users=await this.getOnlineUsers();
-    return users.some(item => item.name===name)
+    const users=await this.getOnlineUsers(name);
+    return users.some(item => item.name===name && item.online)
   },
 };
 io.sockets.on('connection',(socket)=>{

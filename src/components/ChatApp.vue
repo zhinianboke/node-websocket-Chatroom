@@ -362,11 +362,11 @@
           isVoice:true
         },
         about:{
-          version:"v1.0",
+          version:"v1.0.0",
           license:"MIT",
-          author:"cleverqin",
-          email:"705597001@qq.com",
-          github:"https://github.com/cleverqin/node-websocket-Chatroom"
+          author:"zhinianblog",
+          email:"zhinianblog@163.com",
+          github:""
         },
         loginUser:{},
         token:"",
@@ -510,19 +510,24 @@
         _this.socket.on("history-message",_this.listenerHistoryMessage);
       },
       addUser(user){
+        console.log("链接成功！",user)
         let index=-1;
         for (let i = 0; i < this.users.length; i++) {
           let item = this.users[i];
           if(user.id===item.id){
             index=i;
+            user.online = true;
             this.users[i]=user;
+            this.users[i].online=true;
           }
         }
         if(index===-1){
+          user.online=true;
           this.users.push(user);
         }
       },
       loginSuccess(data,users){
+        console.log("loginSuccess",data)
         const _this=this;
         _this.loginUser=data.user;
         _this.token=data.token;
@@ -554,6 +559,8 @@
         this.addSessionMessage(MESSAGE,to.type==='group'?to.id:from.id)
       },
       listenerSystem(user,type){
+      
+        console.log("listenerSystem",user)
         const _this=this;
         switch (type) {
           case "join":
@@ -574,7 +581,8 @@
         for (let i = 0; i < this.users.length; i++) {
           let item = this.users[i];
           if(user.id===item.id){
-            this.users.splice(i,1);
+            this.users[i].online=false;
+            //this.users.splice(i,1);
             if(item.id===this.curSession.id){
               this.curSession={};
             }
