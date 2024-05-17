@@ -58,7 +58,7 @@
                               :message="item"
                               :setting="setting"
                               :is-send="loginUser.id===item.from.id"
-                              v-for="(item,i) in getMessages(curSession.id)">
+                              v-for="(item,i) in getMessages(curSession.id, loginUser.id)">
                 </UiChatBubble>
               </div>
             </UiSessionPanel>
@@ -262,7 +262,7 @@
                             :message="item"
                             :setting="setting"
                             :is-send="loginUser.id===item.from.id"
-                            v-for="(item,i) in getMessages(curSession.id)">
+                            v-for="(item,i) in getMessages(curSession.id, loginUser.id)">
               </UiChatBubble>
             </div>
           </div>
@@ -303,8 +303,8 @@
       finallyMessage(){
         return (sessionId) => {
           let messages=[];
-          if(sessionId&&this.messageData[sessionId]){
-            messages= this.messageData[sessionId];
+          if(sessionId&&this.messageData[this.loginUser.id+'@@'+sessionId]){
+            messages= this.messageData[this.loginUser.id+'@@'+sessionId];
           }
           const len=messages.length;
           if(len>0){
@@ -317,8 +317,8 @@
       unReadNum(){
         return (sessionId) => {
           let messages=[];
-          if(sessionId&&this.messageData[sessionId]){
-            messages= this.messageData[sessionId];
+          if(sessionId&&this.messageData[this.loginUser.id+'@@'+sessionId]){
+            messages= this.messageData[this.loginUser.id+'@@'+sessionId];
           }
           let num=0;
           messages.forEach((item) => {
@@ -374,7 +374,8 @@
         audioSrc:BELL_URL,
         socketURL:window._HOST||'',
         socket:null,
-        isConnect:false
+        isConnect:false,
+        alerdlySendMsg:{}
       }
     },
     mounted(){
@@ -390,18 +391,24 @@
         });
         return arr;
       },
-      getMessages(sessionId){
-        if(sessionId&&this.messageData[sessionId]){
-          return this.messageData[sessionId];
+      getMessages(sessionId, loginId){
+        const joinKey = loginId+'@@' + sessionId;
+        if(joinKey && this.messageData[joinKey]){
+          return this.messageData[joinKey];
         }
         return []
       },
       addSessionMessage(message,sessionId){
         const vm=this;
-        if(!this.messageData[sessionId]){
-          this.$set(this.messageData,sessionId,[]);
+        if(!this.messageData[this.loginUser.id+'@@'+sessionId]){
+          this.$set(this.messageData,this.loginUser.id+'@@'+sessionId,[]);
         }
-        this.messageData[sessionId].push(message);
+        if(!(this.alerdlySendMsg[this.loginUser.id+'@@'+sessionId] && this.alerdlySendMsg[this.loginUser.id+'@@'+sessionId] == message.content)) {
+          if(!(message.from.id != this.loginUser.id && this.loginUser.id != message.to.id)) {
+            this.messageData[this.loginUser.id+'@@'+sessionId].push(message);
+          }
+          this.alerdlySendMsg[this.loginUser.id + '@@' + sessionId] = message.content;
+        }
         if(this.curSession.id===sessionId){
           setTimeout(()=>{
             vm.scrollFooter('message-list')
@@ -427,7 +434,7 @@
         }
       },
       setSessionRead(sessionId){
-        let messages=this.getMessages(sessionId);
+        let messages=this.getMessages(sessionId, this.loginUser.id);
         if(messages.length===0){
           return
         }
@@ -559,8 +566,6 @@
         this.addSessionMessage(MESSAGE,to.type==='group'?to.id:from.id)
       },
       listenerSystem(user,type){
-      
-        console.log("listenerSystem",user)
         const _this=this;
         switch (type) {
           case "join":

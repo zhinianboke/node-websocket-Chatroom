@@ -44,7 +44,7 @@ module.exports ={
   },
   getMessages() {
     return new Promise((resolve, reject) => {
-      db.message.find({}).sort({time:1}).skip(0).limit(100).exec((err,docs) => {
+      db.message.find({}).sort({time:1}).skip(0).limit(1000).exec((err,docs) => {
         if(err){
           reject(err)
         }else {
@@ -52,6 +52,31 @@ module.exports ={
         }
       })
     })
+  },
+  getMessagesById(allMsg, currentId, loginId) {
+    const newMsg = [];
+    for (let i = 0; i < allMsg.length; i++) {
+      let item = allMsg[i];
+      
+      if(item.to.id == currentId && item.from.id == loginId){
+        newMsg.push(item);
+      }
+
+      if(item.to.id == loginId && item.from.id == currentId){
+        newMsg.push(item);
+      }
+    }
+    
+    return newMsg;
+
+    // const newResultMsg = {}
+    // resultMessage.forEach((item) => {
+    //   console.log("item",item);
+    //   if(item.to && item.to.id != messageId){
+    //     newResultMsg.push(item)
+    //   }
+    // })
+    // return newResultMsg;
   },
   getUsers(){
     return new Promise((resolve, reject) => {
@@ -78,6 +103,7 @@ module.exports ={
   saveUserInfo(allUsers, user,status){
     if(!(allUsers.some(item1 => item1.id == user.id))) {
       if(status==='login'){
+        user.online=false;
         return new Promise((resolve, reject) => {
           db.userInfo.insert(user,(err,newUser) => {
             if(err){

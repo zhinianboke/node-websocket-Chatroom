@@ -30,16 +30,25 @@ const util={
         this.loginSuccess(user,socket);
         store.saveUser(user,'login')
         const messages = await store.getMessages();
-        socket.emit("history-message","group_001",messages);
+        await this.dealMessage(messages,socket);
       }else {
         console.log(`登录失败,昵称<${user.name}>已存在!`)
         socket.emit('loginFail','登录失败,昵称已存在!')
       }
     }
   },
-  async loginSuccess(user, socket) {
+  async dealMessage(messages,socket) {
+    const allUsers = await this.getOnlineUsers()
+    allUsers.forEach((item) => {
+      allUsers.forEach((item1) => {
+          const newMessages = store.getMessagesById(messages, item.id, item1.id);
+          // console.log("messages", messages)
+          socket.emit("history-message", item.id +'@@' + item1.id, newMessages);
+      })
+    })
     
-    console.log(user)
+  },
+  async loginSuccess(user, socket) {
     user.online=true
     const data={
       user:user,
